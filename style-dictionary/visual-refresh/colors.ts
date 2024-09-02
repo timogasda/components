@@ -15,7 +15,7 @@ const tokens: StyleDictionary.ColorsDictionary = {
   colorGreyTransparentLight: { light: 'rgba(0, 7, 22, 0.12)', dark: 'rgba(0, 7, 22, 1)' },
   colorBackgroundBadgeIcon: { light: '{colorRed600}', dark: '{colorRed500}' },
   colorBackgroundButtonLinkActive: { light: '{colorBlue200}', dark: '{colorGrey650}' },
-  colorBackgroundButtonLinkHover: { light: '{colorBlue100}', dark: '{colorGrey750}' },
+  colorBackgroundButtonLinkHover: { light: '{colorBlue200}', dark: '{colorGrey750}' },
   colorBackgroundButtonNormalActive: { light: '{colorBlue200}', dark: '{colorGrey650}' },
   colorBackgroundButtonNormalDefault: { light: '{colorWhite}', dark: '{colorGrey800}' },
   colorBackgroundButtonNormalDisabled: { light: '{colorWhite}', dark: '{colorGrey800}' },
