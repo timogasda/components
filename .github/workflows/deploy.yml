@@ -1,0 +1,19 @@
+name: Deploy preview
+
+on:
+  workflow_run:
+    workflows: ["Build, lint and test"]
+    types: [completed]
+
+permissions:
+  id-token: write
+  actions: read
+  contents: read
+  security-events: write
+  deployments: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo ${{ secrets.AWS_PREVIEW_BUCKET_NAME }}
