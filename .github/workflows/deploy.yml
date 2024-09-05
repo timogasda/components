@@ -20,3 +20,21 @@ jobs:
         run: echo "$GITHUB_CONTEXT"
         env:
           GITHUB_CONTEXT: ${{ toJson(github) }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: dev-pages
+          path: build
+          run_id: 
+      - name: Unpack
+        run: |
+          cd build
+          tar -xf *.tar.gz
+        shell: bash
+      - name: Deploy dev-pages
+        id: deploy
+        uses: cloudscape-design/actions/.github/actions/deploy-static@gasda/artifacts-v4
+        with:
+          role-to-assume: ${{ secrets.AWS_PREVIEW_ROLE_ARN }}
+          deployment-bucket: ${{ secrets.AWS_PREVIEW_BUCKET_NAME }}
+          source-path: build/lib/static-default
+          target-path: dev-pages

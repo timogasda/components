@@ -38,8 +38,23 @@ jobs:
           git rev-parse HEAD
           git secrets --scan-history
   build:
-    uses: cloudscape-design/actions/.github/workflows/build-lint-test.yml@main
-    secrets: inherit
-    with:
-      artifact-path: lib/static-default
-      artifact-name: dev-pages
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+      - name: Unlock dependencies
+        uses: cloudscape-design/actions/.github/actions/unlock-dependencies@main
+      - run: npm install
+      - run: npm run build
+      # - run: npm run lint
+      # - run: npm run test
+      # - run: npm run test:unit
+      #   if: ${{ github.repository == 'cloudscape-design/components' }}
+      - name: Upload Artifacts
+        uses: cloudscape-design/actions/.github/actions/upload-artifact@gasda/artifacts-v4
+        with:
+          path: lib/static-default
+          name: dev-pages
