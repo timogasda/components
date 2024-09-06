@@ -25,6 +25,7 @@ jobs:
           name: dev-pages
           path: build
           run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.PREVIEW_ARTIFACTS_TOKEN }}
       - name: Unpack
         run: |
           cd build
