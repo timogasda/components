@@ -56,7 +56,7 @@ jobs:
         env:
           MEMBERSHIP_CHECK: ${{ steps.org-membership.outputs.MEMBERSHIP_CHECK }}
       - run: echo "Is a member of aws"
-        if: ${{ contains(steps.org-membership.outputs.MEMBERSHIP_CHECK, 'HTTP/2.0 204 No Content' }}
+        if: contains(steps.org-membership.outputs.MEMBERSHIP_CHECK, 'HTTP/2.0 204 No Content')
       - run: npm install
       - run: npm run build
       # - run: npm run lint
