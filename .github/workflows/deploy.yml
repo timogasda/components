@@ -24,7 +24,7 @@ jobs:
         with:
           name: dev-pages
           path: build
-          run_id: ${{ github.event.workflow_run.id }}
+          run-id: ${{ github.event.workflow_run.id }}
       - name: Unpack
         run: |
           cd build
