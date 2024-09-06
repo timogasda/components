@@ -47,6 +47,13 @@ jobs:
           node-version: 18
       - name: Unlock dependencies
         uses: cloudscape-design/actions/.github/actions/unlock-dependencies@main
+      - id: org-membership
+        run: |
+          org_membership=$(gh api -i /orgs/aws/members/${{ github.triggering_actor }} | head -n 1)
+          echo "::set-output name=membership_check::$org_membership"
+      - run: echo ${{ steps.org-membership.outputs.membership_check }}
+      - run: echo "Is AWS member"
+        if: contains(${{ steps.org-membership.outputs.membership_check }}, "HTTP/2.0 204 No Content")
       - run: npm install
       - run: npm run build
       # - run: npm run lint
