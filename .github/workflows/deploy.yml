@@ -13,19 +13,36 @@ permissions:
   deployments: write
 
 jobs:
-  deploy:
+  check:
     runs-on: ubuntu-latest
     steps:
       - name: Print GitHub context
         run: echo "$GITHUB_CONTEXT"
         env:
           GITHUB_CONTEXT: ${{ toJson(github) }}
+      - id: org-membership
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          echo "membership-check=$(gh api -i /orgs/aws/members/${{ github.triggering_actor }} | head -n 1)" >> "$GITHUB_OUTPUT"
+      - run: echo "$membership-check"
+        env:
+          membership-check: ${{ steps.org-membership.outputs.membership-check }}
+      - name: Check if actor is AWS member
+        if: ${{ !contains(steps.org-membership.outputs.membership-check, 'HTTP/2.0 204 No Content') }}
+        run: exit 1
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: check
+    steps:
       - uses: actions/download-artifact@v4
         with:
           name: dev-pages
           path: build
           run-id: ${{ github.event.workflow_run.id }}
-          github-token: ${{ secrets.PREVIEW_ARTIFACTS_TOKEN }}
+          github-token: ${{ github.token }}
+          # github-token: ${{ secrets.PREVIEW_ARTIFACTS_TOKEN }}
       - name: Unpack
         run: |
           cd build
