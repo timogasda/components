@@ -33,9 +33,11 @@ jobs:
         shell: bash
       - name: Deploy dev-pages
         id: deploy
-        uses: cloudscape-design/actions/.github/actions/deploy-static@gasda/artifacts-v4
+        uses: timogasda/actions/.github/actions/deploy-static@main
         with:
           role-to-assume: ${{ secrets.AWS_PREVIEW_ROLE_ARN }}
           deployment-bucket: ${{ secrets.AWS_PREVIEW_BUCKET_NAME }}
           source-path: build/lib/static-default
           target-path: dev-pages
+          commit-sha: ${{ github.event.workflow_run.head_sha }}
+          cloudfront-host: d1ygrbexbkwxpo.cloudfront.net
