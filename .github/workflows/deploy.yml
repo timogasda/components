@@ -16,16 +16,17 @@ jobs:
   check:
     runs-on: ubuntu-latest
     steps:
-      - id: org-membership
+      - name: Get PR labels
+        id: get-labels
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          echo "membership-check=$(gh api -i /orgs/aws/members/${{ github.triggering_actor }} | head -n 1)" >> "$GITHUB_OUTPUT"
-      - run: echo "$membership-check"
+          echo "labels=$(gh api /repos/${{ github.repository }}/pulls/${{ github.event.workflow_run.pull_requests[0].number }} --jq '.labels.[].name')" >> "$GITHUB_OUTPUT"
+      - run: echo "$labels"
         env:
-          membership-check: ${{ steps.org-membership.outputs.membership-check }}
-      - name: Check if actor is AWS member
-        if: ${{ !contains(steps.org-membership.outputs.membership-check, 'HTTP/2.0 204 No Content') }}
+          labels: ${{ steps.get-labels.outputs.labels }}
+      - name: Check if preview label is attached
+        if: ${{ !contains(steps.get-labels.outputs.labels, 'allow previews') }}
         run: exit 1
 
   deploy:
