@@ -17,7 +17,6 @@ jobs:
   check:
     # if: ${{ toJSON(github.event.workflow_run.pull_requests) != '[]' }}
     runs-on: ubuntu-latest
-    if: ${{ github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'pull_request' }}
     steps:
       - name: Print GitHub context
         run: echo "$GITHUB_CONTEXT"
