@@ -16,10 +16,6 @@ jobs:
   check:
     runs-on: ubuntu-latest
     steps:
-      - name: Print GitHub context
-        run: echo "$GITHUB_CONTEXT"
-        env:
-          GITHUB_CONTEXT: ${{ toJson(github) }}
       - id: org-membership
         env:
           GH_TOKEN: ${{ github.token }}
@@ -42,7 +38,6 @@ jobs:
           path: build
           run-id: ${{ github.event.workflow_run.id }}
           github-token: ${{ github.token }}
-          # github-token: ${{ secrets.PREVIEW_ARTIFACTS_TOKEN }}
       - name: Unpack
         run: |
           cd build
