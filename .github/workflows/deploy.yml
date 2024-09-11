@@ -15,13 +15,14 @@ permissions:
 
 jobs:
   check:
-    if: ${{ toJSON(github.event.workflow_run.pull_requests) != '[]' }}
+    # if: ${{ toJSON(github.event.workflow_run.pull_requests) != '[]' }}
     runs-on: ubuntu-latest
     steps:
       - name: Print GitHub context
         run: echo "$GITHUB_CONTEXT"
         env:
           GITHUB_CONTEXT: ${{ toJson(github) }}
+      - run: echo "${{ toJSON(github.event.workflow_run.pull_requests) != '[]' }}""
       - name: Get PR labels
         id: get-labels
         env:
