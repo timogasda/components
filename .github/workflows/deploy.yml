@@ -4,7 +4,7 @@ on:
   workflow_run:
     workflows: ["Build, lint and test"]
     types: [completed]
-    branches-ignore: [main]
+    # branches-ignore: [main]
 
 permissions:
   id-token: write
@@ -22,7 +22,7 @@ jobs:
         run: echo "$GITHUB_CONTEXT"
         env:
           GITHUB_CONTEXT: ${{ toJson(github) }}
-      - run: echo "${{ toJSON(github.event.workflow_run.pull_requests) != '[]' }}""
+      - run: echo "${{ toJSON(github.event.workflow_run.pull_requests) != '[]' }}"
       - name: Get PR labels
         id: get-labels
         env:
