@@ -52,6 +52,12 @@ jobs:
           cd build
           tar -xf *.tar.gz
         shell: bash
+      - name: Create deployment
+        id: create-deployment
+        env:
+          GH_TOKEN: ${{ secrets.PREVIEW_DEPLOY_TOKEN }}
+        run: |
+          echo id=$(gh api --method POST /repos/${{ github.repository }}/deployments -f "ref=${{ github.event.workflow_run.head_branch }}" -f "environment=dev-pages" --jq '.id') >> "$GITHUB_OUTPUT"
       - name: Deploy dev-pages
         id: deploy
         uses: timogasda/actions/.github/actions/deploy-static@main
@@ -62,3 +68,15 @@ jobs:
           target-path: dev-pages
           commit-sha: ${{ github.event.workflow_run.head_sha }}
           cloudfront-host: d1ygrbexbkwxpo.cloudfront.net
+      - name: Set deployment status (success)
+        if: success()
+        env:
+          GH_TOKEN: ${{ secrets.PREVIEW_DEPLOY_TOKEN }}
+        run: |
+          gh api --method POST /repos/${{ github.repository }}/deployments/${{ steps.create-deployment.outputs.id }}/statuses -f "state=success" -f "log_url=${{ steps.deploy.outputs.preview-url }}index.html"
+      - name: Set deployment status (failure)
+        if: failure()
+        env:
+          GH_TOKEN: ${{ secrets.PREVIEW_DEPLOY_TOKEN }}
+        run: |
+          gh api --method POST /repos/${{ github.repository }}/deployments/${{ steps.create-deployment.outputs.id }}/statuses -f "state=failure"
