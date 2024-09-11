@@ -21,7 +21,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          echo "labels=$(gh api /repos/${{ github.repository }}/pulls/${{ github.event.workflow_run.pull_requests[0].number }} --jq '.labels.[].name')" >> "$GITHUB_OUTPUT"
+          echo "labels=$(gh api /repos/${{ github.repository }}/pulls/${{ github.event.workflow_run.pull_requests[0].number }} --jq '[.labels.[].name] | join(",")')" >> "$GITHUB_OUTPUT"
       - run: echo "$labels"
         env:
           labels: ${{ steps.get-labels.outputs.labels }}
