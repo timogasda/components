@@ -14,21 +14,36 @@ permissions:
   deployments: write
 
 jobs:
+  test:
+    steps:
+      - name: test condition
+        run: echo "${{ toJSON(github.event.workflow_run.pull_requests) == '[]' }}"
+
+  # This is the path for PRs opened from a fork. Check for the existance of the label
   check:
-    # if: ${{ toJSON(github.event.workflow_run.pull_requests) != '[]' }}
+    if: ${{ toJSON(github.event.workflow_run.pull_requests) == '[]' }}
     runs-on: ubuntu-latest
     steps:
       - name: Print GitHub context
         run: echo "$GITHUB_CONTEXT"
         env:
           GITHUB_CONTEXT: ${{ toJson(github) }}
-      - run: echo "${{ toJSON(github.event.workflow_run.pull_requests) != '[]' }}"
+      - name: Get PR number
+        id: get-pr
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          echo "number=$(gh pr view -R '${{ github.repository }}' '${{ github.event.workflow_run.head_repository.owner.login }}:${{ github.event.workflow_run.head_branch }}' --json number --jq ".number")" >> "$GITHUB_OUTPUT"
+      - run: echo "$number"
+        env:
+          number: ${{ steps.get-pr.outputs.number }}
       - name: Get PR labels
         id: get-labels
         env:
           GH_TOKEN: ${{ github.token }}
+          number: ${{ steps.get-pr.outputs.number }}
         run: |
-          echo "labels=$(gh api /repos/${{ github.repository }}/pulls/${{ github.event.workflow_run.pull_requests[0].number }} --jq '[.labels.[].name] | join(",")')" >> "$GITHUB_OUTPUT"
+          echo "labels=$(gh api '/repos/${{ github.repository }}/pulls/$number' --jq '[.labels.[].name] | join(",")')" >> "$GITHUB_OUTPUT"
       - run: echo "$labels"
         env:
           labels: ${{ steps.get-labels.outputs.labels }}
