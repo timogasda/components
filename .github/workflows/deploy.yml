@@ -44,7 +44,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           number: ${{ steps.get-pr.outputs.number }}
         run: |
-          echo "labels=$(gh api '/repos/${{ github.repository }}/pulls/$number' --jq '[.labels.[].name] | join(",")')" >> "$GITHUB_OUTPUT"
+          echo "labels=$(gh api "/repos/${{ github.repository }}/pulls/$number" --jq '[.labels.[].name] | join(",")')" >> "$GITHUB_OUTPUT"
       - run: echo "$labels"
         env:
           labels: ${{ steps.get-labels.outputs.labels }}
