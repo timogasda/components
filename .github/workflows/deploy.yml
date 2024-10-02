@@ -66,7 +66,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.PREVIEW_DEPLOY_TOKEN }}
         run: |
-          gh api -i --method POST /repos/${{ github.repository }}/deployments -f "ref=${{ github.event.workflow_run.head_sha }}" -f "environment=dev-pages" --jq '.id' > .deployment_out
+          gh api -i --method POST /repos/${{ github.repository }}/deployments -f "ref=${{ github.event.workflow_run.head_sha }}" -f "environment=dev-pages" -f "auto_merge=false" --jq '.id' > .deployment_out
           echo status=$(cat .deployment_out | head -n 1) >> "$GITHUB_OUTPUT"
           echo id=$(cat .deployment_out | tail -n 1) >> "$GITHUB_OUTPUT"
       - name: Check status code
