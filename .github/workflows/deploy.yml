@@ -14,12 +14,6 @@ permissions:
   deployments: write
 
 jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - name: test condition
-        run: echo "${{ toJSON(github.event.workflow_run.pull_requests) == '[]' }}"
-
   # This is the path for PRs opened from a fork. Check for the existance of the label
   check:
     if: ${{ toJSON(github.event.workflow_run.pull_requests) == '[]' }}
@@ -72,7 +66,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.PREVIEW_DEPLOY_TOKEN }}
         run: |
-          gh api -i --method POST /repos/${{ github.repository }}/deployments -f "ref=${{ github.event.workflow_run.head_branch }}" -f "environment=dev-pages" --jq '.id' > .deployment_out
+          gh api -i --method POST /repos/${{ github.repository }}/deployments -f "ref=${{ github.event.workflow_run.head_sha }}" -f "environment=dev-pages" --jq '.id' > .deployment_out
           echo status=$(cat .deployment_out | head -n 1) >> "$GITHUB_OUTPUT"
           echo id=$(cat .deployment_out | tail -n 1) >> "$GITHUB_OUTPUT"
       - name: Check status code
