@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 export type FunnelType = 'single-page' | 'multi-page';
-export type FlowType = 'create' | 'edit' | 'home' | 'dashboard';
+export type FlowType = 'create' | 'edit' | 'home' | 'dashboard' | 'view-resource';
 export interface AnalyticsMetadata {
   instanceIdentifier?: string;
   flowType?: FlowType;
@@ -23,6 +23,7 @@ export interface FunnelErrorProps extends BaseFunnelProps {
 
 export interface FunnelStartProps extends Omit<BaseFunnelProps, 'funnelInteractionId'> {
   flowType?: FlowType;
+  resourceType?: string;
   funnelNameSelector: string;
   totalFunnelSteps: number;
   optionalStepNumbers: number[];
@@ -152,6 +153,40 @@ export interface IFunnelMetrics {
   externalLinkInteracted: FunnelMethod<FunnelLinkInteractionProps>;
 }
 
+// Interface for task completion method props
+export interface TaskCompletionDataProps {
+  // Time taken to respond to customers after customers submit the form
+  // in milliseconds
+  timeToRespondAfterFormSubmit: number;
+  // Unique identifier for the task aka funnelInteractionId.
+  // Default: ''
+  taskInteractionId: string;
+  // Task name identifier to identify the task aka funnelName
+  // Default: ''
+  taskIdentifier?: string;
+  // To identify create or edit flow
+  // Default: ''
+  taskFlowType?: string;
+  //"single-page" | "multi-page"
+  // Default: ''
+  taskType?: FunnelType;
+  // Additional metadata related to completion such as success or error
+  completionMetadata?: string;
+}
+
+export type TaskCompletionDataMethod = (props: TaskCompletionDataProps) => void;
+
 export interface IPerformanceMetrics {
   tableInteraction: TableInteractionMethod;
+  taskCompletionData: TaskCompletionDataMethod;
+}
+
+export interface ComponentMountedProps {
+  componentName: string;
+  taskInteractionId?: string;
+  details: Record<string, string | boolean | number | undefined>;
+}
+export type ComponentMountedMethod = (props: ComponentMountedProps) => string;
+export interface IComponentMetrics {
+  componentMounted: ComponentMountedMethod;
 }

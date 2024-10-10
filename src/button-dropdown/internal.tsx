@@ -48,8 +48,10 @@ const InternalButtonDropdown = React.forwardRef(
       description,
       preferCenter,
       mainAction,
+      showMainActionOnly,
       __internalRootRef,
       analyticsMetadataTransformer,
+      linkStyle,
       ...props
     }: InternalButtonDropdownProps,
     ref: React.Ref<ButtonDropdownProps.Ref>
@@ -210,8 +212,27 @@ const InternalButtonDropdown = React.forwardRef(
       const mainActionAriaLabel = externalIconAriaLabel
         ? `${mainAction.ariaLabel ?? mainAction.text} ${mainAction.externalIconAriaLabel}`
         : mainAction.ariaLabel;
-
-      trigger = (
+      const hasNoText = !text;
+      const mainActionButton = (
+        <InternalButton
+          ref={mainActionRef}
+          {...mainActionProps}
+          {...mainActionIconProps}
+          className={clsx(
+            styles['trigger-button'],
+            hasNoText && styles['has-no-text'],
+            isVisualRefresh && styles['visual-refresh']
+          )}
+          variant={variant}
+          ariaLabel={mainActionAriaLabel}
+          formAction="none"
+        >
+          {text}
+        </InternalButton>
+      );
+      trigger = showMainActionOnly ? (
+        <div className={styles['split-trigger']}>{mainActionButton}</div>
+      ) : (
         <div role="group" aria-label={ariaLabel} className={styles['split-trigger-wrapper']}>
           <div
             className={clsx(
@@ -233,17 +254,7 @@ const InternalButtonDropdown = React.forwardRef(
               },
             })}
           >
-            <InternalButton
-              ref={mainActionRef}
-              {...mainActionProps}
-              {...mainActionIconProps}
-              className={clsx(styles['trigger-button'])}
-              variant={variant}
-              ariaLabel={mainActionAriaLabel}
-              formAction="none"
-            >
-              {text}
-            </InternalButton>
+            {mainActionButton}
           </div>
           <div
             className={clsx(
@@ -256,7 +267,9 @@ const InternalButtonDropdown = React.forwardRef(
             )}
             {...getAnalyticsMetadataAttribute(analyticsMetadata)}
           >
-            <InternalButton ref={triggerRef} {...baseTriggerProps} />
+            <InternalButton ref={triggerRef} {...baseTriggerProps} __emitPerformanceMarks={false}>
+              {children}
+            </InternalButton>
           </div>
         </div>
       );
@@ -352,6 +365,7 @@ const InternalButtonDropdown = React.forwardRef(
               expandToViewport={expandToViewport}
               variant={variant}
               analyticsMetadataTransformer={analyticsMetadataTransformer}
+              linkStyle={linkStyle}
             />
           </OptionsList>
         </Dropdown>

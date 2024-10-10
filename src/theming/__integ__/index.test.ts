@@ -20,17 +20,22 @@ class ThemingPage extends BasePageObject {
   setSecondaryTheme() {
     return this.click('[data-testid="set-secondary"]');
   }
-  async getCSSProperty(selector: string, property: string) {
-    const elem = await this.browser.$(selector);
-    return this.browser.getElementCSSValue(elem.elementId, property);
+  async getCSSProperty(selector: string, property: string): Promise<string> {
+    const elementId = await this.getElementId(selector);
+    const propertyValue = await this.browser.getElementCSSValue(elementId, property);
+    return propertyValue;
   }
-  getButtonBackgroundColor() {
+  async getElementId(selector: string): Promise<string> {
+    const elem = await this.browser.$(selector);
+    return elem.elementId;
+  }
+  getButtonBackgroundColor(): Promise<string> {
     return this.getCSSProperty(wrapper.findButton().toSelector(), 'background-color');
   }
-  getLinkTextColor() {
+  getLinkTextColor(): Promise<string> {
     return this.getCSSProperty(wrapper.findLink().toSelector(), 'color');
   }
-  getFakeLinkTextColor() {
+  getFakeLinkTextColor(): Promise<string> {
     return this.getCSSProperty(wrapper.find('a[data-testid=element-color-text-link-default]').toSelector(), 'color');
   }
 }

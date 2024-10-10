@@ -4,13 +4,13 @@ import React, { useCallback, useEffect, useImperativeHandle, useRef, useState } 
 import clsx from 'clsx';
 
 import { useContainerQuery } from '@cloudscape-design/component-toolkit';
+import { findUpUntil } from '@cloudscape-design/component-toolkit/dom';
 import { useStableCallback } from '@cloudscape-design/component-toolkit/internal';
 
 import { SplitPanelSideToggleProps } from '../internal/context/split-panel-context';
 import { fireNonCancelableEvent } from '../internal/events';
 import { useControllable } from '../internal/hooks/use-controllable';
 import { useMobile } from '../internal/hooks/use-mobile';
-import { findUpUntil } from '../internal/utils/dom';
 import {
   CONSTRAINED_MAIN_PANEL_MIN_HEIGHT,
   CONSTRAINED_PAGE_HEIGHT,
@@ -23,12 +23,8 @@ import { ResizableDrawer } from './drawer/resizable-drawer';
 import { AppLayoutProps, AppLayoutPropsWithDefaults } from './interfaces';
 import { MobileToolbar } from './mobile-toolbar';
 import { Notifications } from './notifications';
-import {
-  SideSplitPanelDrawer,
-  SPLIT_PANEL_MIN_WIDTH,
-  SplitPanelProvider,
-  SplitPanelProviderProps,
-} from './split-panel';
+import { SideSplitPanelDrawer, SplitPanelProvider, SplitPanelProviderProps } from './split-panel';
+import { checkSplitPanelForcedPosition } from './split-panel/split-panel-utils';
 import { togglesConfig } from './toggles';
 import { getStickyOffsetVars } from './utils/sticky-offsets';
 import { TOOLS_DRAWER_ID, useDrawers } from './utils/use-drawers';
@@ -177,7 +173,7 @@ const ClassicAppLayout = React.forwardRef(
       return () => cancelAnimationFrame(id);
     }, [placement.insetBlockStart, placement.insetBlockEnd]);
     const contentHeightStyle = {
-      [disableBodyScroll ? 'height' : 'minHeight']: `calc(100vh - ${headerFooterHeight}px)`,
+      [disableBodyScroll ? 'blockSize' : 'minBlockSize']: `calc(100vh - ${headerFooterHeight}px)`,
     };
 
     const [notificationsHeight, notificationsRef] = useContainerQuery(rect => rect.contentBoxHeight);
@@ -298,10 +294,8 @@ const ClassicAppLayout = React.forwardRef(
     };
 
     const effectiveToolsWidth = getEffectiveToolsWidth();
-
-    // if there is no space to display split panel in the side, force to bottom
-    const isSplitPanelForcedPosition =
-      isMobile || resizableSpaceAvailable - effectiveToolsWidth < SPLIT_PANEL_MIN_WIDTH;
+    const splitPanelMaxWidth = resizableSpaceAvailable - effectiveToolsWidth;
+    const isSplitPanelForcedPosition = checkSplitPanelForcedPosition({ isMobile, splitPanelMaxWidth });
     const finalSplitPanePosition = isSplitPanelForcedPosition ? 'bottom' : splitPanelPosition;
 
     const splitPaneAvailableOnTheSide = splitPanelDisplayed && finalSplitPanePosition === 'side';

@@ -10,8 +10,8 @@ import { useFunnel, useFunnelStep, useFunnelSubStep } from '../internal/analytic
 import {
   DATA_ATTR_FUNNEL_VALUE,
   getFunnelValueSelector,
-  getNameFromSelector,
   getSubStepAllSelector,
+  getTextFromSelector,
 } from '../internal/analytics/selectors';
 import { getBaseProps } from '../internal/base-component';
 import { InfoLinkLabelContext } from '../internal/context/info-link-label-context';
@@ -77,8 +77,8 @@ const InternalLink = React.forwardRef(
 
     const fireFunnelEvent = (funnelInteractionId: string) => {
       if (variant === 'info') {
-        const stepName = getNameFromSelector(stepNameSelector);
-        const subStepName = getNameFromSelector(subStepNameSelector);
+        const stepName = getTextFromSelector(stepNameSelector);
+        const subStepName = getTextFromSelector(subStepNameSelector);
 
         FunnelMetrics.helpPanelInteracted({
           funnelIdentifier,
@@ -95,8 +95,8 @@ const InternalLink = React.forwardRef(
           subStepAllSelector: getSubStepAllSelector(),
         });
       } else if (external) {
-        const stepName = getNameFromSelector(stepNameSelector);
-        const subStepName = getNameFromSelector(subStepNameSelector);
+        const stepName = getTextFromSelector(stepNameSelector);
+        const subStepName = getTextFromSelector(subStepNameSelector);
 
         FunnelMetrics.externalLinkInteracted({
           funnelIdentifier,
@@ -172,7 +172,7 @@ const InternalLink = React.forwardRef(
         styles[getColorStyle(variant, color)]
       ),
       'aria-label': ariaLabel,
-      'aria-labelledby': '',
+      'aria-labelledby': undefined as string | undefined,
       [DATA_ATTR_FUNNEL_VALUE]: uniqueId,
     };
 

@@ -2,6 +2,10 @@
 // SPDX-License-Identifier: Apache-2.0
 /* eslint simple-import-sort/imports: 0 */
 import React from 'react';
+import { act, render, fireEvent } from '@testing-library/react';
+import { KeyCode } from '@cloudscape-design/test-utils-core/utils.js';
+import createWrapper from '../../../lib/components/test-utils/dom';
+
 import {
   describeEachAppLayout,
   renderComponent,
@@ -11,9 +15,8 @@ import {
   findActiveDrawerLandmark,
 } from './utils';
 
-import { act } from '@testing-library/react';
 import AppLayout, { AppLayoutProps } from '../../../lib/components/app-layout';
-import visualRefreshStyles from '../../../lib/components/app-layout/visual-refresh/styles.css.js';
+import visualRefreshStyles from '../../../lib/components/app-layout/visual-refresh/styles.selectors.js';
 import toolbarTriggerButtonStyles from '../../../lib/components/app-layout/visual-refresh-toolbar/toolbar/trigger-button/styles.css.js';
 
 jest.mock('../../../lib/components/internal/hooks/use-mobile', () => ({
@@ -21,6 +24,12 @@ jest.mock('../../../lib/components/internal/hooks/use-mobile', () => ({
 }));
 
 const testIf = (condition: boolean) => (condition ? test : test.skip);
+
+const mockEventBubble = {
+  bubbles: true,
+  isTrusted: true,
+  relatedTarget: null,
+};
 
 jest.mock('@cloudscape-design/component-toolkit', () => ({
   ...jest.requireActual('@cloudscape-design/component-toolkit'),
@@ -32,7 +41,9 @@ describeEachAppLayout(({ size, theme }) => {
     const { wrapper, rerender } = renderComponent(<AppLayout toolsHide={true} drawers={[testDrawer]} />);
     expect(wrapper.findDrawersTriggers()).toHaveLength(1);
     rerender(<AppLayout />);
+
     expect(wrapper.findDrawersTriggers()).toHaveLength(0);
+    expect(wrapper.findDrawerTriggerTooltip()).toBeNull();
   });
 
   test('should not apply drawers treatment to the tools if the drawers array is empty', () => {
@@ -177,11 +188,90 @@ describeEachAppLayout(({ size, theme }) => {
     const drawerTrigger = wrapper.findDrawerTriggerById('security')!;
     const selectedClass = theme === 'refresh' ? visualRefreshStyles.selected : toolbarTriggerButtonStyles.selected;
     expect(drawerTrigger!.getElement()).not.toHaveClass(selectedClass);
+    expect(wrapper!.findDrawerTriggerTooltip()).toBeNull();
 
     drawerTrigger.click();
     expect(drawerTrigger!.getElement()).toHaveClass(selectedClass);
 
     drawerTrigger.click();
     expect(drawerTrigger!.getElement()).not.toHaveClass(selectedClass);
+  });
+
+  testIf(theme === 'refresh-toolbar')('tooltip renders correctly on focus, blur, and escape key press events', () => {
+    const mockDrawers = [testDrawer];
+    const result = render(<AppLayout drawers={mockDrawers} />);
+    const wrapper = createWrapper(result.container).findAppLayout();
+    expect(wrapper!.findDrawerTriggerTooltip()).toBeNull();
+    expect(() => result.getByTestId(testDrawer.ariaLabels.drawerName)).toThrow();
+
+    const items = wrapper!.findDrawersTriggers();
+    expect(items.length).toEqual(mockDrawers.length);
+
+    fireEvent.focus(items![0].getElement());
+    expect(wrapper!.findDrawerTriggerTooltip()).toBeTruthy();
+    expect(result.getByText(testDrawer.ariaLabels.drawerName)).toBeTruthy();
+
+    fireEvent.blur(items![0].getElement());
+    expect(wrapper!.findDrawerTriggerTooltip()).toBeNull();
+    expect(() => result.getByTestId(testDrawer.ariaLabels.drawerName)).toThrow();
+
+    fireEvent.focus(items![0].getElement());
+    expect(wrapper!.findDrawerTriggerTooltip()).toBeTruthy();
+    expect(result.getByText(testDrawer.ariaLabels.drawerName)).toBeTruthy();
+
+    fireEvent.keyDown(items![0].getElement(), {
+      ...mockEventBubble,
+      key: 'Escape',
+      code: KeyCode.escape,
+    });
+    expect(wrapper!.findDrawerTriggerTooltip()).toBeNull();
+    expect(() => result.getByTestId(testDrawer.ariaLabels.drawerName)).toThrow();
+  });
+
+  testIf(theme === 'refresh-toolbar')(
+    'tooltip renders correctly on pointer events and is removed on escape key press',
+    () => {
+      const mockDrawers = [testDrawer];
+      const result = render(<AppLayout drawers={mockDrawers} />);
+      const wrapper = createWrapper(result.container).findAppLayout();
+      expect(wrapper!.findDrawerTriggerTooltip()).toBeNull();
+      expect(() => result.getByTestId(testDrawer.ariaLabels.drawerName)).toThrow();
+
+      const items = wrapper!.findDrawersTriggers();
+      expect(items?.length).toEqual(mockDrawers.length);
+
+      fireEvent.pointerEnter(items![0].getElement());
+      expect(wrapper!.findDrawerTriggerTooltip()).toBeTruthy();
+      expect(result.getByText(testDrawer.ariaLabels.drawerName)).toBeTruthy();
+
+      fireEvent.pointerLeave(items![0].getElement());
+      expect(wrapper!.findDrawerTriggerTooltip()).toBeNull();
+      expect(() => result.getByTestId(testDrawer.ariaLabels.drawerName)).toThrow();
+
+      fireEvent.pointerEnter(items![0].getElement());
+      expect(wrapper!.findDrawerTriggerTooltip()).toBeTruthy();
+      expect(result.getByText(testDrawer.ariaLabels.drawerName)).toBeTruthy();
+
+      fireEvent.keyDown(items![0].getElement(), {
+        ...mockEventBubble,
+        key: 'Escape',
+        code: KeyCode.escape,
+      });
+      expect(wrapper!.findDrawerTriggerTooltip()).toBeNull();
+      expect(() => result.getByTestId(testDrawer.ariaLabels.drawerName)).toThrow();
+    }
+  );
+
+  testIf(theme === 'refresh-toolbar')('tooltip does not render on trigger focus via close button', () => {
+    const mockDrawers = [testDrawer];
+    const result = render(<AppLayout drawers={mockDrawers} />);
+    const wrapper = createWrapper(result.container).findAppLayout();
+    expect(wrapper!.findDrawerTriggerTooltip()).toBeNull();
+    expect(() => result.getByTestId(testDrawer.ariaLabels.drawerName)).toThrow();
+    wrapper?.findDrawerTriggerById(testDrawer.id)!.click();
+    expect(wrapper?.findActiveDrawer()).toBeTruthy();
+    wrapper?.findActiveDrawerCloseButton()!.click();
+    expect(wrapper!.findDrawerTriggerTooltip()).toBeNull();
+    expect(() => result.getByTestId(testDrawer.ariaLabels.drawerName)).toThrow();
   });
 });
