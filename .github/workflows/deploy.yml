@@ -61,7 +61,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [check-branch, check-fork]
     if: |
-      always() && (needs.check-branch.outputs.can-deploy || needs.check-fork.outputs.can-deploy)
+      always() && (needs.check-branch.outputs.can-deploy == "true" || needs.check-fork.outputs.can-deploy == "true")
     steps:
       - run: |
           echo ${{ needs.check-branch.outputs.can-deploy }}
