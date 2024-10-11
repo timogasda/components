@@ -14,10 +14,17 @@ permissions:
   deployments: write
 
 jobs:
-  # This is the path for PRs opened from a fork. Check for the existance of the label
-  check:
+  check-branch:
+    if: ${{ toJSON(github.event.workflow_run.pull_requests) != '[]' }}
+    runs-on: ubuntu-latest
+    outputs:
+      can-deploy: true
+
+  check-fork:
     if: ${{ toJSON(github.event.workflow_run.pull_requests) == '[]' }}
     runs-on: ubuntu-latest
+    outputs:
+      can-deploy: ${{ steps.check-label.outputs.result }}
     steps:
       - name: Print GitHub context
         run: echo "$GITHUB_CONTEXT"
@@ -43,12 +50,15 @@ jobs:
         env:
           labels: ${{ steps.get-labels.outputs.labels }}
       - name: Check if preview label is attached
-        if: ${{ !contains(steps.get-labels.outputs.labels, 'allow previews') }}
-        run: exit 1
+        id: check-label
+        # if: ${{ !contains(steps.get-labels.outputs.labels, 'allow previews') }}
+        run: echo "result=${{ contains(steps.get-labels.outputs.labels, 'allow previews') }}" >> "$GITHUB_OUTPUT"
 
   deploy:
     runs-on: ubuntu-latest
-    needs: check
+    needs: [check-branch, check-fork]
+    if: |
+      always() && (needs.check-branch.outputs.can-deploy || needs.check-fork.outputs.can-deploy)
     steps:
       - uses: actions/download-artifact@v4
         with:
