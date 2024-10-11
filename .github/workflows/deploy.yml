@@ -19,6 +19,9 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       can-deploy: true
+    steps:
+      - name: Can deploy from a branch
+        run: echo "All good!"
 
   check-fork:
     if: ${{ toJSON(github.event.workflow_run.pull_requests) == '[]' }}
