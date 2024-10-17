@@ -70,6 +70,7 @@ const MultiSelectItem = (
       ariaPosinset={ariaPosinset}
       ariaSetsize={ariaSetsize}
       ariaDescribedby={isDisabledWithReason ? descriptionId : ''}
+      value={option.option.value}
       {...baseProps}
     >
       <div className={className}>
@@ -95,6 +96,7 @@ const MultiSelectItem = (
               trackRef={internalRef}
               value={disabledReason!}
               position="right"
+              hideOnOverscroll={true}
             />
           )}
         </>

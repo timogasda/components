@@ -3,6 +3,7 @@
 import React, { useEffect, useRef } from 'react';
 import clsx from 'clsx';
 
+import { findUpUntil } from '@cloudscape-design/component-toolkit/dom';
 import { useStableCallback } from '@cloudscape-design/component-toolkit/internal';
 
 import { BaseComponentProps, getBaseProps } from '../../base-component';
@@ -14,7 +15,6 @@ import {
   NonCancelableEventHandler,
 } from '../../events';
 import { useMergeRefs } from '../../hooks/use-merge-refs';
-import { findUpUntil } from '../../utils/dom';
 import { DropdownStatusProps } from '../dropdown-status';
 
 import styles from './styles.css.js';
@@ -42,6 +42,7 @@ export interface OptionsListProps extends BaseComponentProps {
   ariaLabelledby?: string;
   ariaDescribedby?: string;
   decreaseBlockMargin?: boolean;
+  embedded?: boolean;
 }
 
 const BOTTOM_TRIGGER_OFFSET = 80;
@@ -73,6 +74,7 @@ const OptionsList = (
     ariaLabel,
     ariaLabelledby,
     ariaDescribedby,
+    embedded,
     ...restProps
   }: OptionsListProps,
   ref: React.Ref<HTMLUListElement>
@@ -99,6 +101,7 @@ const OptionsList = (
 
   const className = clsx(styles['options-list'], {
     [styles['decrease-block-margin']]: decreaseBlockMargin,
+    [styles['options-list-embedded']]: embedded,
   });
 
   const mergedRef = useMergeRefs(ref, menuRef);
@@ -117,7 +120,7 @@ const OptionsList = (
       onMouseUp={event => onMouseUp?.(getItemIndex(menuRef, event))}
       onBlur={event => fireNonCancelableEvent(onBlur, { relatedTarget: event.relatedTarget })}
       onFocus={() => fireNonCancelableEvent(onFocus)}
-      tabIndex={-1}
+      tabIndex={embedded ? 0 : -1}
       aria-label={ariaLabel}
       aria-labelledby={ariaLabelledby}
       aria-describedby={ariaDescribedby}

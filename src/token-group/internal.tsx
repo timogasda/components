@@ -3,6 +3,8 @@
 import React, { useState } from 'react';
 import clsx from 'clsx';
 
+import { getAnalyticsMetadataAttribute } from '@cloudscape-design/component-toolkit/internal/analytics-metadata';
+
 import { getBaseProps } from '../internal/base-component';
 import Option from '../internal/components/option';
 import TokenList from '../internal/components/token-list';
@@ -36,10 +38,12 @@ export default function InternalTokenGroup({
   checkControlled('TokenGroup', 'items', items, 'onDismiss', onDismiss);
 
   const [nextFocusIndex, setNextFocusIndex] = useState<null | number>(null);
-  const onFocusMoved = () => setNextFocusIndex(null);
   const tokenListRef = useListFocusController({
     nextFocusIndex,
-    onFocusMoved,
+    onFocusMoved: target => {
+      target.focus();
+      setNextFocusIndex(null);
+    },
     listItemSelector: `.${tokenListStyles['list-item']}`,
     showMoreSelector: `.${tokenListStyles.toggle}`,
   });
@@ -72,6 +76,9 @@ export default function InternalTokenGroup({
             }}
             disabled={item.disabled}
             readOnly={readOnly}
+            {...(item.disabled || readOnly
+              ? {}
+              : getAnalyticsMetadataAttribute({ detail: { position: `${itemIndex + 1}` } }))}
           >
             <Option option={item} isGenericGroup={false} />
           </Token>

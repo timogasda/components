@@ -5,13 +5,19 @@ import useBrowser from '@cloudscape-design/browser-test-tools/use-browser';
 
 import createWrapper from '../../../lib/components/test-utils/selectors';
 import { viewports } from './constants';
+import { getUrlParams, Theme } from './utils';
 
-import mobileStyles from '../../../lib/components/app-layout/mobile-toolbar/styles.selectors.js';
+import testutilStyles from '../../../lib/components/app-layout/test-classes/styles.selectors.js';
 
 const wrapper = createWrapper().findAppLayout();
-const mobileSelector = `.${mobileStyles['mobile-bar']}`;
+const mobileSelector = `.${testutilStyles['mobile-bar']}`;
 
 class AppLayoutPage extends BasePageObject {
+  async visit(url: string) {
+    await this.browser.url(url);
+    await this.waitForVisible(wrapper.findContentRegion().toSelector());
+  }
+
   getNavPosition() {
     return this.getBoundingBox(wrapper.findNavigation().findSideNavigation().findHeaderLink().toSelector());
   }
@@ -19,43 +25,32 @@ class AppLayoutPage extends BasePageObject {
   getContentPosition() {
     return this.getBoundingBox(wrapper.findContentRegion().find('h1').toSelector());
   }
+}
 
-  async trackResizeObserverErrors() {
-    await this.browser.execute(() => {
-      // Resize observer errors are not logged into the devtools messages by default
-      // https://github.com/w3c/csswg-drafts/issues/5248
-      window.addEventListener('error', event => {
-        if (event.message.startsWith('ResizeObserver')) {
-          console.error(event.message);
-        }
-      });
+describe.each(['classic', 'refresh', 'refresh-toolbar'] as Theme[])('%s', theme => {
+  function setupTest(
+    { viewport = viewports.desktop, pageName = 'default', extraParams = {} },
+    testFn: (page: AppLayoutPage) => Promise<void>
+  ) {
+    return useBrowser(async browser => {
+      const page = new AppLayoutPage(browser);
+      await page.setWindowSize(viewport);
+      await page.visit(`#/light/app-layout/${pageName}?${getUrlParams(theme, extraParams)}`);
+      await testFn(page);
     });
   }
-}
 
-function setupTest(
-  { viewport = viewports.desktop, pageName = 'default', trackResizeObserverErrors = true, visualRefresh = false },
-  testFn: (page: AppLayoutPage) => Promise<void>
-) {
-  return useBrowser(async browser => {
-    const page = new AppLayoutPage(browser);
-    await page.setWindowSize(viewport);
-    await browser.url(`#/light/app-layout/${pageName}?visualRefresh=${visualRefresh}`);
-    if (trackResizeObserverErrors) {
-      await page.trackResizeObserverErrors();
-    }
-    await page.waitForVisible(wrapper.findContentRegion().toSelector());
-    await testFn(page);
-  });
-}
-
-for (const visualRefresh of [true, false]) {
   test(
     'renders initial state with default content type',
-    setupTest({ visualRefresh }, async page => {
-      await expect(page.isDisplayed(wrapper.findNavigationToggle().toSelector())).resolves.toBe(false);
+    setupTest({}, async page => {
+      if (theme !== 'refresh-toolbar') {
+        await expect(page.isDisplayed(wrapper.findNavigationToggle().toSelector())).resolves.toBe(false);
+        await expect(page.isDisplayed(wrapper.findToolsToggle().toSelector())).resolves.toBe(true);
+      } else {
+        await expect(page.isDisplayed(wrapper.findNavigationToggle().toSelector())).resolves.toBe(true);
+        await expect(page.isDisplayed(wrapper.findToolsToggle().toSelector())).resolves.toBe(true);
+      }
       await expect(page.isDisplayed(wrapper.findNavigationClose().toSelector())).resolves.toBe(true);
-      await expect(page.isDisplayed(wrapper.findToolsToggle().toSelector())).resolves.toBe(true);
       await expect(page.isDisplayed(wrapper.findToolsClose().toSelector())).resolves.toBe(false);
       await expect(page.isDisplayed(wrapper.findSplitPanel().toSelector())).resolves.toBe(false);
     })
@@ -63,7 +58,7 @@ for (const visualRefresh of [true, false]) {
 
   test(
     'renders initial state with wizard content type',
-    setupTest({ pageName: 'with-wizard', visualRefresh }, async page => {
+    setupTest({ pageName: 'with-wizard' }, async page => {
       await expect(page.isDisplayed(wrapper.findNavigationToggle().toSelector())).resolves.toBe(true);
       await expect(page.isDisplayed(wrapper.findNavigationClose().toSelector())).resolves.toBe(false);
       await expect(page.isDisplayed(wrapper.findToolsToggle().toSelector())).resolves.toBe(true);
@@ -93,17 +88,22 @@ for (const visualRefresh of [true, false]) {
   );
 
   test(
-    'does not preserve breadcrumbs state',
+    'breadcrumbs preservation state works as expected',
     setupTest({ viewport: viewports.desktop, pageName: 'stateful' }, async page => {
       await page.click('#breadcrumbs-button');
       await expect(page.getText('#breadcrumbs-text')).resolves.toBe('Clicked: 1');
       await page.setWindowSize(viewports.mobile);
-      await expect(page.getText('#breadcrumbs-text')).resolves.toBe('Clicked: 0');
+      await expect(page.getText('#breadcrumbs-text')).resolves.toBe(
+        `Clicked: ${
+          //can preserve breadcrumbs on refresh-toolbar
+          theme === 'refresh-toolbar' ? '1' : '0'
+        }`
+      );
     })
   );
 
   test(
-    'preserves inner state when drawer closes and opens',
+    'preserves navigation inner state when drawer closes and opens',
     setupTest({ pageName: 'stateful' }, async page => {
       await page.click('#navigation-button');
       await expect(page.getText('#navigation-text')).resolves.toBe('Clicked: 1');
@@ -167,15 +167,23 @@ for (const visualRefresh of [true, false]) {
       await expect(page.getContentPosition()).resolves.toEqual(contentBefore);
     })
   );
-}
 
-test(
-  'does not render notifications slot when it is empty',
-  setupTest({ pageName: 'with-notifications', visualRefresh: true, trackResizeObserverErrors: false }, async page => {
-    const { height: originalHeight } = await page.getBoundingBox(wrapper.findNotifications().toSelector());
-    expect(originalHeight).toBeGreaterThan(0);
-    await page.click(wrapper.findNotifications().findFlashbar().findItems().get(1).findDismissButton().toSelector());
-    const { height: newHeight } = await page.getBoundingBox(wrapper.findNotifications().toSelector());
-    expect(newHeight).toEqual(0);
-  })
-);
+  test(
+    'maintains consistent content top offset between initially empty notifications and dynamically dismissed',
+    setupTest({ pageName: 'with-notifications', extraParams: { disableNotifications: 'true' } }, async page => {
+      // get reference offset on a page with notifications disabled
+      const { top: expectedOffset } = await page.getBoundingBox('[data-testid="content-root"]');
+      // visit the same page with notifications enabled to compare
+      await page.visit(
+        `#/light/app-layout/with-notifications?${getUrlParams(theme, { disableNotifications: 'false' })}`
+      );
+      await page.click(wrapper.findNotifications().findFlashbar().findItems().get(1).findDismissButton().toSelector());
+      await expect(page.isExisting(wrapper.findNotifications().findFlashbar().toSelector())).resolves.toBe(true);
+      await expect(
+        page.getElementsCount(wrapper.findNotifications().findFlashbar().findItems().toSelector())
+      ).resolves.toBe(0);
+      const { top: contentTop } = await page.getBoundingBox('[data-testid="content-root"]');
+      expect(contentTop).toEqual(expectedOffset);
+    })
+  );
+});

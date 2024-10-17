@@ -4,7 +4,6 @@ import React from 'react';
 
 import PropertyFilter from '~components/property-filter';
 import { PropertyFilterProps } from '~components/property-filter/interfaces';
-import PropertyFilterInternal from '~components/property-filter/internal';
 
 import ScreenshotArea from '../utils/screenshot-area';
 import {
@@ -100,7 +99,7 @@ export default function () {
           {...commonProps}
           freeTextFiltering={{ operators: [':', '!:', '=', '!=', '^', '!^'] }}
         />
-        <PropertyFilterInternal
+        <PropertyFilter
           className="property-filter-group-editor"
           query={{
             tokens: [
