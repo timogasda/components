@@ -1,5 +1,6 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
+
 import { BasePageObject } from '@cloudscape-design/browser-test-tools/page-objects';
 import useBrowser from '@cloudscape-design/browser-test-tools/use-browser';
 
@@ -7,7 +8,7 @@ function setupTest(
   testFn: (parameters: {
     page: BasePageObject;
     getMarks: () => Promise<PerformanceMark[]>;
-    getElementByPerformanceMark: (id: string) => Promise<WebdriverIO.Element>;
+    isElementPerformanceMarkExisting: (id: string) => Promise<boolean>;
   }) => Promise<void>
 ) {
   return useBrowser(async browser => {
@@ -17,16 +18,17 @@ function setupTest(
       const marks = await browser.execute(() => performance.getEntriesByType('mark') as PerformanceMark[]);
       return marks.filter(m => m.detail?.source === 'awsui');
     };
-    const getElementByPerformanceMark = (id: string) => browser.$(`[data-analytics-performance-mark="${id}"]`);
+    const isElementPerformanceMarkExisting = (id: string) =>
+      page.isExisting(`[data-analytics-performance-mark="${id}"]`);
 
-    await testFn({ page, getMarks, getElementByPerformanceMark });
+    await testFn({ page, getMarks, isElementPerformanceMarkExisting });
   });
 }
 
 describe('Table', () => {
   test(
     'Emits a mark only for visible tables',
-    setupTest(async ({ getMarks, getElementByPerformanceMark }) => {
+    setupTest(async ({ getMarks, isElementPerformanceMarkExisting }) => {
       const marks = await getMarks();
 
       expect(marks).toHaveLength(2);
@@ -48,13 +50,13 @@ describe('Table', () => {
 
       expect(marks[0].detail.instanceIdentifier).not.toEqual(marks[1].detail.instanceIdentifier);
 
-      expect(await getElementByPerformanceMark(marks[0].detail.instanceIdentifier)).toBeTruthy();
+      await expect(isElementPerformanceMarkExisting(marks[0].detail.instanceIdentifier)).resolves.toBeTruthy();
     })
   );
 
   test(
     'Emits a mark when properties change',
-    setupTest(async ({ page, getMarks, getElementByPerformanceMark }) => {
+    setupTest(async ({ page, getMarks, isElementPerformanceMarkExisting }) => {
       await page.click('#loading');
       let marks = await getMarks();
 
@@ -66,7 +68,7 @@ describe('Table', () => {
         loading: false,
         header: 'This is my table',
       });
-      expect(await getElementByPerformanceMark(marks[2].detail.instanceIdentifier)).toBeTruthy();
+      await expect(isElementPerformanceMarkExisting(marks[2].detail.instanceIdentifier)).resolves.toBeTruthy();
 
       await page.click('#loading');
 
@@ -79,7 +81,7 @@ describe('Table', () => {
         loading: true,
         header: 'This is my table',
       });
-      expect(await getElementByPerformanceMark(marks[2].detail.instanceIdentifier)).toBeTruthy();
+      await expect(isElementPerformanceMarkExisting(marks[2].detail.instanceIdentifier)).resolves.toBeTruthy();
     })
   );
 });

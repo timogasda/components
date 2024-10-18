@@ -42,7 +42,7 @@ export interface AppLayoutProps extends BaseComponentProps {
    * - `iconSvg` (React.ReactNode) - (Optional) Specifies the SVG of a custom icon. For more information, see [SVG icon guidelines](/components/icon/?tabId=api#slots)
    *
    * #### DrawerAriaLabels
-   * - `drawerName` (string) - Label for the drawer itself.
+   * - `drawerName` (string) - Label for the drawer itself, and for the drawer trigger button tooltip text.
    * - `closeButton` (string) - (Optional) Label for the close button.
    * - `triggerButton` (string) - (Optional) Label for the trigger button.
    * - `resizeHandle` (string) - (Optional) Label for the resize handle.
@@ -298,7 +298,7 @@ export namespace AppLayoutProps {
   export interface Drawer {
     id: string;
     content: React.ReactNode;
-    trigger: {
+    trigger?: {
       iconName?: IconProps.Name;
       iconSvg?: React.ReactNode;
     };
@@ -307,6 +307,7 @@ export namespace AppLayoutProps {
     resizable?: boolean;
     defaultSize?: number;
     onResize?: NonCancelableEventHandler<{ size: number }>;
+    preserveInactiveContent?: boolean;
   }
 
   export interface DrawerAriaLabels {

@@ -211,6 +211,7 @@ export type ColorChartsTokenName =
   | 'colorChartsPaletteCategorical49'
   | 'colorChartsPaletteCategorical50';
 export type ColorsTokenName =
+  | 'colorGreyOpaque10'
   | 'colorGreyOpaque25'
   | 'colorGreyOpaque40'
   | 'colorGreyOpaque50'
@@ -300,6 +301,10 @@ export type ColorsTokenName =
   | 'colorBackgroundAvatarDefault'
   | 'colorTextAvatar'
   | 'colorBackgroundLoadingBarGenAi'
+  | 'colorBackgroundChatBubbleOutgoing'
+  | 'colorBackgroundChatBubbleIncoming'
+  | 'colorTextChatBubbleOutgoing'
+  | 'colorTextChatBubbleIncoming'
   | 'colorBorderButtonNormalActive'
   | 'colorBorderButtonNormalDefault'
   | 'colorBorderToggleButtonNormalPressed'
@@ -465,7 +470,17 @@ export type ColorsTokenName =
   | 'colorDropzoneBackgroundActive'
   | 'colorDropzoneBackgroundHover'
   | 'colorDropzoneTextActive'
-  | 'colorDropzoneTextHover';
+  | 'colorDropzoneTextHover'
+  | 'colorBackgroundSeverityCritical'
+  | 'colorTextSeverityCritical'
+  | 'colorBackgroundSeverityHigh'
+  | 'colorTextSeverityHigh'
+  | 'colorBackgroundSeverityMedium'
+  | 'colorTextSeverityMedium'
+  | 'colorBackgroundSeverityLow'
+  | 'colorTextSeverityLow'
+  | 'colorBackgroundSeverityNeutral'
+  | 'colorTextSeverityNeutral';
 export type TypographyTokenName =
   | 'fontBoxValueLargeWeight'
   | 'fontButtonLetterSpacing'
@@ -550,6 +565,7 @@ export type BordersTokenName =
   | 'borderRadiusTabsFocusRing'
   | 'borderRadiusTiles'
   | 'borderRadiusToken'
+  | 'borderRadiusChatBubble'
   | 'borderRadiusTutorialPanelItem'
   | 'borderTableStickyWidth'
   | 'borderLinkFocusRingOutline'

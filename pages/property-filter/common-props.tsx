@@ -1,7 +1,9 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
+import React from 'react';
+
+import { Badge, SpaceBetween } from '~components';
 import { PropertyFilterProps } from '~components/property-filter';
-import { I18nStringsExt } from '~components/property-filter/i18n-utils';
 
 import {
   DateForm,
@@ -15,7 +17,8 @@ import {
 } from './custom-forms';
 import { states, TableItem } from './table.data';
 
-const getStateLabel = (value: TableItem['state']) => (value !== undefined && states[value]) || 'Unknown';
+const getStateLabel = (value: TableItem['state'], fallback = 'Invalid value') =>
+  (value !== undefined && states[value]) || fallback;
 
 export const columnDefinitions = [
   {
@@ -41,7 +44,7 @@ export const columnDefinitions = [
     header: 'Stopped',
     type: 'boolean',
     propertyLabel: 'Stopped',
-    cell: (item: TableItem) => item.state === 0,
+    cell: (item: TableItem) => item.state === 'STOPPED',
   },
   {
     id: 'instancetype',
@@ -71,7 +74,7 @@ export const columnDefinitions = [
     id: 'owner',
     sortingField: 'owner',
     header: 'Owner',
-    type: 'text',
+    type: 'enum',
     propertyLabel: 'Owner',
     cell: (item: TableItem) => item.owner,
   },
@@ -139,14 +142,33 @@ export const columnDefinitions = [
     propertyLabel: 'Last event occurrence (legacy)',
     cell: (item: TableItem) => item.lasteventat?.toISOString(),
   },
+  {
+    id: 'tags',
+    sortingField: 'tagsIndex',
+    header: 'Tags',
+    type: 'enum',
+    propertyLabel: 'Tags',
+    minWidth: 150,
+    cell: (item: TableItem) => (
+      <SpaceBetween size="s" direction="horizontal">
+        {(item.tags ?? []).map(tag => (
+          <Badge key={tag}>{tag}</Badge>
+        ))}
+      </SpaceBetween>
+    ),
+  },
 ].map((item, ind) => ({ order: ind + 1, ...item }));
 
 export const labels = {
   filteringAriaLabel: 'your choice',
   filteringPlaceholder: 'Search',
+  filteringLoadingText: 'Loading suggestions',
+  filteringErrorText: 'Error fetching results.',
+  filteringRecoveryText: 'Retry',
+  filteringFinishedText: 'End of results',
 };
 
-export const i18nStrings: PropertyFilterProps.I18nStrings & I18nStringsExt = {
+export const i18nStrings: PropertyFilterProps.I18nStrings = {
   dismissAriaLabel: 'Dismiss',
 
   groupValuesText: 'Values',

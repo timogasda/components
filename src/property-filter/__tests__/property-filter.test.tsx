@@ -3,7 +3,8 @@
 import React, { useState } from 'react';
 import { act, render } from '@testing-library/react';
 
-import { KeyCode } from '@cloudscape-design/test-utils-core/dist/utils';
+import { warnOnce } from '@cloudscape-design/component-toolkit/internal';
+import { KeyCode } from '@cloudscape-design/test-utils-core/utils';
 
 import '../../__a11y__/to-validate-a11y';
 import PropertyFilter from '../../../lib/components/property-filter';
@@ -11,12 +12,20 @@ import {
   FilteringOption,
   FilteringProperty,
   PropertyFilterProps,
-  Ref,
 } from '../../../lib/components/property-filter/interfaces';
 import createWrapper, { ElementWrapper, PropertyFilterWrapper } from '../../../lib/components/test-utils/dom';
 import { createDefaultProps } from './common';
 
 import styles from '../../../lib/components/property-filter/styles.selectors.js';
+
+jest.mock('@cloudscape-design/component-toolkit/internal', () => ({
+  ...jest.requireActual('@cloudscape-design/component-toolkit/internal'),
+  warnOnce: jest.fn(),
+}));
+
+afterEach(() => {
+  (warnOnce as jest.Mock).mockReset();
+});
 
 const states: Record<string, string> = {
   0: 'Stopped',
@@ -78,7 +87,7 @@ const filteringOptions: readonly FilteringOption[] = [
 
 const defaultProps = createDefaultProps(filteringProperties, filteringOptions);
 
-const renderComponent = (props?: Partial<PropertyFilterProps & { ref: React.Ref<Ref> }>) => {
+const renderComponent = (props?: Partial<PropertyFilterProps>) => {
   const { container } = render(<PropertyFilter {...defaultProps} {...props} />);
   return { container, propertyFilterWrapper: createWrapper(container).findPropertyFilter()! };
 };
@@ -285,6 +294,31 @@ describe('property filter parts', () => {
           .map(optionWrapper => optionWrapper.getElement().textContent)
       ).toEqual(['Stopped', 'Stopping', 'Running']);
     });
+
+    test('calls onLoadItem when opening editor value autosuggest', () => {
+      const onLoadItems = jest.fn();
+      const { propertyFilterWrapper: wrapper } = renderComponent({
+        onLoadItems,
+        filteringOptions: [],
+        filteringStatusType: 'pending',
+        query: { operation: 'and', tokens: [{ propertyKey: 'state', operator: ':', value: 'Sto' }] },
+      });
+
+      const [contentWrapper] = openTokenEditor(wrapper);
+      const valueSelectWrapper = findValueSelector(contentWrapper);
+      valueSelectWrapper.focus();
+      expect(onLoadItems).toHaveBeenCalledWith(
+        expect.objectContaining({
+          detail: {
+            filteringProperty: expect.objectContaining({ key: 'state' }),
+            filteringOperator: ':',
+            filteringText: 'Sto',
+            firstPage: true,
+            samePage: false,
+          },
+        })
+      );
+    });
   });
 
   describe('labelled values', () => {
@@ -450,4 +484,31 @@ describe('property filter parts', () => {
     const { container } = render(<PropertyFilter {...defaultProps} />);
     await expect(container).toValidateA11y();
   });
+});
+
+test('warns and does not hide operations when using hideOperations and enableTokenGroups', () => {
+  const { propertyFilterWrapper: wrapper } = renderComponent({
+    query: {
+      operation: 'or',
+      tokenGroups: [
+        { propertyKey: 'string', operator: '=', value: 'first' },
+        {
+          operation: 'and',
+          tokens: [
+            { propertyKey: 'string', operator: ':', value: 'se' },
+            { propertyKey: 'string', operator: ':', value: 'cond' },
+          ],
+        },
+      ],
+      tokens: [],
+    },
+    hideOperations: true,
+    enableTokenGroups: true,
+  });
+
+  expect(wrapper.findTokens()[1].findTokenOperation()).not.toBe(null);
+  expect(wrapper.findTokens()[1].findGroupTokens()[1].findTokenOperation()).not.toBe(null);
+
+  expect(warnOnce).toHaveBeenCalledTimes(1);
+  expect(warnOnce).toHaveBeenCalledWith('PropertyFilter', 'Operations cannot be hidden when token groups are enabled.');
 });

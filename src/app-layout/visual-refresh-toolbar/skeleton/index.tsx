@@ -4,6 +4,8 @@ import React from 'react';
 import clsx from 'clsx';
 
 import customCssProps from '../../../internal/generated/custom-css-properties';
+import { useMobile } from '../../../internal/hooks/use-mobile';
+import { highContrastHeaderClassName } from '../../../internal/utils/content-header-utils';
 import { AppLayoutPropsWithDefaults } from '../../interfaces';
 
 import sharedStyles from '../../resize/styles.css.js';
@@ -16,6 +18,7 @@ interface SkeletonLayoutProps
   extends Pick<
     AppLayoutPropsWithDefaults,
     | 'notifications'
+    | 'headerVariant'
     | 'contentHeader'
     | 'content'
     | 'contentType'
@@ -34,17 +37,21 @@ interface SkeletonLayoutProps
   splitPanelOpen?: boolean;
   sideSplitPanel?: React.ReactNode;
   bottomSplitPanel?: React.ReactNode;
+  globalTools?: React.ReactNode;
+  globalToolsOpen?: boolean;
 }
 
 export function SkeletonLayout({
   style,
   notifications,
+  headerVariant,
   contentHeader,
   content,
   navigation,
   navigationOpen,
   navigationWidth,
   tools,
+  globalTools,
   toolsOpen,
   toolsWidth,
   toolbar,
@@ -55,7 +62,9 @@ export function SkeletonLayout({
   contentType,
   maxContentWidth,
   disableContentPaddings,
+  globalToolsOpen,
 }: SkeletonLayoutProps) {
+  const isMobile = useMobile();
   const isMaxWidth = maxContentWidth === Number.MAX_VALUE || maxContentWidth === Number.MAX_SAFE_INTEGER;
   const anyPanelOpen = navigationOpen || toolsOpen;
   return (
@@ -65,7 +74,7 @@ export function SkeletonLayout({
         [styles['has-adaptive-widths-dashboard']]: contentType === 'dashboard',
       })}
       style={{
-        minBlockSize: `calc(100vh - ${placement.insetBlockStart}px - ${placement.insetBlockEnd}px)`,
+        minBlockSize: `calc(100vh - ${placement.insetBlockStart + placement.insetBlockEnd}px)`,
         [customCssProps.maxContentWidth]: isMaxWidth ? '100%' : maxContentWidth ? `${maxContentWidth}px` : '',
         [customCssProps.navigationWidth]: `${navigationWidth}px`,
         [customCssProps.toolsWidth]: `${toolsWidth}px`,
@@ -84,7 +93,15 @@ export function SkeletonLayout({
           {navigation}
         </div>
       )}
-      <main className={clsx(styles['main-landmark'], anyPanelOpen && styles['unfocusable-mobile'])}>
+      <main className={clsx(styles['main-landmark'], isMobile && anyPanelOpen && styles['unfocusable-mobile'])}>
+        {notifications && (
+          <div
+            className={clsx(
+              styles['notifications-background'],
+              headerVariant === 'high-contrast' && highContrastHeaderClassName
+            )}
+          ></div>
+        )}
         {notifications}
         <div className={clsx(styles.main, { [styles['main-disable-paddings']]: disableContentPaddings })} style={style}>
           {contentHeader && <div className={styles['content-header']}>{contentHeader}</div>}
@@ -101,9 +118,18 @@ export function SkeletonLayout({
           {sideSplitPanel}
         </div>
       )}
-      <div className={clsx(styles.tools, !toolsOpen && styles['panel-hidden'], sharedStyles['with-motion'])}>
+      <div
+        className={clsx(
+          styles.tools,
+          !toolsOpen && styles['panel-hidden'],
+          sharedStyles['with-motion'],
+          navigationOpen && !toolsOpen && styles['unfocusable-mobile'],
+          toolsOpen && styles['tools-open']
+        )}
+      >
         {tools}
       </div>
+      <div className={clsx(styles['global-tools'], !globalToolsOpen && styles['panel-hidden'])}>{globalTools}</div>
     </div>
   );
 }

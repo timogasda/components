@@ -1,28 +1,59 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
-import React, { useState } from 'react';
+import React, { useContext, useState } from 'react';
 
 import { useCollection } from '@cloudscape-design/collection-hooks';
 
-import AppLayout from '~components/app-layout';
-import Box from '~components/box';
-import Button from '~components/button';
-import Header from '~components/header';
+import {
+  AppLayout,
+  Box,
+  Button,
+  Checkbox,
+  Header,
+  PropertyFilter,
+  PropertyFilterProps,
+  SpaceBetween,
+  SplitPanel,
+  Table,
+} from '~components';
 import I18nProvider from '~components/i18n';
 import messages from '~components/i18n/messages/all.en';
-import PropertyFilter from '~components/property-filter';
-import SplitPanel from '~components/split-panel';
-import Table from '~components/table';
 
+import AppContext, { AppContextType } from '../app/app-context';
 import { Breadcrumbs, Navigation, Tools } from '../app-layout/utils/content-blocks';
 import appLayoutLabels from '../app-layout/utils/labels';
 import * as toolsContent from '../app-layout/utils/tools-content';
+import { useOptionsLoader } from '../common/options-loader';
 import ScreenshotArea from '../utils/screenshot-area';
 import { columnDefinitions, filteringProperties, labels } from './common-props';
 import { allItems, states, TableItem } from './table.data';
 
+type PageContext = React.Context<
+  AppContextType<{
+    virtualScroll?: boolean;
+    expandToViewport?: boolean;
+    enableTokenGroups?: boolean;
+    disableFreeTextFiltering?: boolean;
+    hideOperations?: boolean;
+    asyncOptions?: boolean;
+    emptyOptions?: boolean;
+  }>
+>;
+
 export default function () {
-  const [splitPanelOpen, setSplitPanelOpen] = useState(true);
+  const {
+    urlParams: {
+      virtualScroll = true,
+      expandToViewport = true,
+      enableTokenGroups = true,
+      disableFreeTextFiltering = false,
+      hideOperations = false,
+      asyncOptions = false,
+      emptyOptions = false,
+    },
+    setUrlParams,
+  } = useContext(AppContext as PageContext);
+
   const { items, collectionProps, actions, propertyFilterProps } = useCollection(allItems, {
     propertyFiltering: {
       empty: 'empty',
@@ -47,12 +78,54 @@ export default function () {
     sorting: {},
   });
 
-  const filteringOptions = propertyFilterProps.filteringOptions.map(option => {
-    if (option.propertyKey === 'state') {
-      option.label = states[parseInt(option.value)];
+  let filteringOptions = propertyFilterProps.filteringOptions
+    .map(option => {
+      if (option.propertyKey === 'state') {
+        option.label = states[option.value];
+      }
+      return option;
+    })
+    .filter(option => option.propertyKey !== 'tags')
+    .filter(option => option.propertyKey !== 'averagelatency');
+
+  const allTags = new Set<string>();
+  for (const item of allItems) {
+    for (const tag of item.tags ?? []) {
+      allTags.add(tag);
     }
-    return option;
-  });
+  }
+  for (const tag of allTags) {
+    filteringOptions.push({ propertyKey: 'tags', value: tag });
+  }
+
+  if (emptyOptions) {
+    filteringOptions = [];
+  }
+
+  const [splitPanelOpen, setSplitPanelOpen] = useState(true);
+  const [filteringText, setFilteringText] = useState('');
+  const optionsLoader = useOptionsLoader<PropertyFilterProps.FilteringOption>({ pageSize: 15, timeout: 1000 });
+  const handleLoadItems = ({
+    detail: { filteringProperty, filteringText, firstPage },
+  }: {
+    detail: PropertyFilterProps.LoadItemsDetail;
+  }) => {
+    if (filteringProperty) {
+      const sourceItems = filteringOptions.filter(option => option.propertyKey === filteringProperty.key);
+      optionsLoader.fetchItems({ sourceItems, filteringText, firstPage });
+      setFilteringText(filteringText);
+    } else {
+      setFilteringText('');
+    }
+  };
+  const asyncProps = asyncOptions
+    ? {
+        asyncProperties: false,
+        filteringStatusType: optionsLoader.status,
+        onLoadItems: handleLoadItems,
+        filteringFinishedText: filteringText ? `End of "${filteringText}" results` : 'End of all results',
+      }
+    : {};
 
   return (
     <ScreenshotArea gutters={false}>
@@ -80,7 +153,50 @@ export default function () {
                 resizeHandleAriaLabel: 'Slider',
               }}
             >
-              {' '}
+              <SpaceBetween size="s">
+                <Checkbox
+                  checked={virtualScroll}
+                  onChange={({ detail }) => setUrlParams({ virtualScroll: detail.checked })}
+                >
+                  virtualScroll
+                </Checkbox>
+                <Checkbox
+                  checked={expandToViewport}
+                  onChange={({ detail }) => setUrlParams({ expandToViewport: detail.checked })}
+                >
+                  expandToViewport
+                </Checkbox>
+                <Checkbox
+                  checked={enableTokenGroups}
+                  onChange={({ detail }) => setUrlParams({ enableTokenGroups: detail.checked })}
+                >
+                  enableTokenGroups
+                </Checkbox>
+                <Checkbox
+                  checked={disableFreeTextFiltering}
+                  onChange={({ detail }) => setUrlParams({ disableFreeTextFiltering: detail.checked })}
+                >
+                  disableFreeTextFiltering
+                </Checkbox>
+                <Checkbox
+                  checked={hideOperations}
+                  onChange={({ detail }) => setUrlParams({ hideOperations: detail.checked })}
+                >
+                  hideOperations
+                </Checkbox>
+                <Checkbox
+                  checked={asyncOptions}
+                  onChange={({ detail }) => setUrlParams({ asyncOptions: detail.checked })}
+                >
+                  asyncOptions
+                </Checkbox>
+                <Checkbox
+                  checked={emptyOptions}
+                  onChange={({ detail }) => setUrlParams({ emptyOptions: detail.checked })}
+                >
+                  Empty options
+                </Checkbox>
+              </SpaceBetween>
             </SplitPanel>
           }
           content={
@@ -94,14 +210,18 @@ export default function () {
                 <PropertyFilter
                   {...labels}
                   {...propertyFilterProps}
-                  filteringOptions={filteringOptions}
-                  virtualScroll={true}
+                  {...asyncProps}
+                  filteringOptions={asyncOptions ? optionsLoader.items : filteringOptions}
+                  enableTokenGroups={enableTokenGroups}
+                  disableFreeTextFiltering={disableFreeTextFiltering}
+                  hideOperations={hideOperations}
+                  virtualScroll={virtualScroll}
+                  expandToViewport={expandToViewport}
                   countText={`${items.length} matches`}
-                  expandToViewport={true}
-                  filteringEmpty="No properties"
+                  filteringEmpty="No suggestions found"
                 />
               }
-              columnDefinitions={columnDefinitions.slice(0, 2)}
+              columnDefinitions={columnDefinitions}
             />
           }
         />

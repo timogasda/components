@@ -145,7 +145,7 @@ export function ValueInput({
         .map(({ label, value }) => ({ label, value }))
     : [];
 
-  const valueAutosuggestHandlers = useLoadItems(onLoadItems, '', property?.externalProperty);
+  const valueAutosuggestHandlers = useLoadItems(onLoadItems, '', property?.externalProperty, value, operator);
   const asyncValueAutosuggestProps = property?.propertyKey
     ? { ...valueAutosuggestHandlers, ...asyncProps }
     : { empty: asyncProps.empty };
@@ -157,7 +157,7 @@ export function ValueInput({
     <OperatorForm value={value} onChange={onChangeValue} operator={operator} />
   ) : (
     <InternalAutosuggest
-      enteredTextLabel={i18nStrings.enteredTextLabel ?? (value => value)}
+      enteredTextLabel={i18nStrings.enteredTextLabel}
       value={matchedOption?.label ?? value ?? ''}
       clearAriaLabel={i18nStrings.clearAriaLabel}
       onChange={e => onChangeValue(e.detail.value)}

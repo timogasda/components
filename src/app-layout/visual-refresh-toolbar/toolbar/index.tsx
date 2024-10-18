@@ -8,7 +8,7 @@ import { useResizeObserver } from '@cloudscape-design/component-toolkit/internal
 import { BreadcrumbGroupImplementation } from '../../../breadcrumb-group/implementation';
 import { createWidgetizedComponent } from '../../../internal/widgets';
 import { AppLayoutProps } from '../../interfaces';
-import { Focusable } from '../../utils/use-focus-control';
+import { Focusable, FocusControlMultipleStates } from '../../utils/use-focus-control';
 import { AppLayoutInternals } from '../interfaces';
 import { ToolbarSlot } from '../skeleton/slot-wrappers';
 import { DrawerTriggers, SplitPanelToggleProps } from './drawer-triggers';
@@ -40,7 +40,11 @@ export interface ToolbarProps {
   activeDrawerId?: string | null;
   drawers?: ReadonlyArray<AppLayoutProps.Drawer>;
   drawersFocusRef?: React.Ref<Focusable>;
+  globalDrawersFocusControl?: FocusControlMultipleStates;
   onActiveDrawerChange?: (drawerId: string | null) => void;
+  globalDrawers?: ReadonlyArray<AppLayoutProps.Drawer> | undefined;
+  activeGlobalDrawersIds?: ReadonlyArray<string>;
+  onActiveGlobalDrawersChange?: ((drawerId: string) => void) | undefined;
 }
 
 interface AppLayoutToolbarImplementationProps {
@@ -55,7 +59,11 @@ function convertLegacyProps(toolbarProps: ToolbarProps, legacyProps: AppLayoutIn
     activeDrawerId: toolbarProps.activeDrawerId ?? legacyProps.activeDrawer?.id,
     drawers: toolbarProps.drawers ?? legacyProps.drawers,
     drawersFocusRef: toolbarProps.drawersFocusRef ?? legacyProps.drawersFocusControl?.refs.toggle,
+    globalDrawersFocusControl: toolbarProps.globalDrawersFocusControl,
     onActiveDrawerChange: toolbarProps.onActiveDrawerChange ?? legacyProps.onActiveDrawerChange,
+    globalDrawers: toolbarProps.globalDrawers ?? legacyProps.globalDrawers,
+    activeGlobalDrawersIds: toolbarProps.activeGlobalDrawersIds ?? legacyProps.activeGlobalDrawersIds,
+    onActiveGlobalDrawersChange: toolbarProps.onActiveGlobalDrawersChange ?? legacyProps.onActiveGlobalDrawersChange,
     hasNavigation: toolbarProps.hasNavigation ?? !!legacyProps.navigation,
     navigationOpen: toolbarProps.navigationOpen ?? legacyProps.navigationOpen,
     navigationFocusRef: toolbarProps.navigationFocusRef ?? legacyProps.navigationFocusControl?.refs.toggle,
@@ -86,6 +94,7 @@ export function AppLayoutToolbarImplementation({
     toolbarState,
     setToolbarState,
     setToolbarHeight,
+    globalDrawersFocusControl,
   } = appLayoutInternals;
   const {
     ariaLabels,
@@ -93,6 +102,9 @@ export function AppLayoutToolbarImplementation({
     drawers,
     drawersFocusRef,
     onActiveDrawerChange,
+    globalDrawers,
+    activeGlobalDrawersIds,
+    onActiveGlobalDrawersChange,
     hasNavigation,
     navigationOpen,
     navigationFocusRef,
@@ -139,6 +151,18 @@ export function AppLayoutToolbarImplementation({
     };
   }, [pinnedToolbar, setToolbarState, toolbarState]);
 
+  const anyPanelOpenInMobile = !!isMobile && (!!activeDrawerId || (!!navigationOpen && !!hasNavigation));
+  useEffect(() => {
+    if (anyPanelOpenInMobile) {
+      document.body.classList.add(styles['block-body-scroll']);
+    } else {
+      document.body.classList.remove(styles['block-body-scroll']);
+    }
+    return () => {
+      document.body.classList.remove(styles['block-body-scroll']);
+    };
+  }, [anyPanelOpenInMobile]);
+
   const toolbarHidden = toolbarState === 'hide' && !pinnedToolbar;
 
   return (
@@ -154,7 +178,7 @@ export function AppLayoutToolbarImplementation({
     >
       <div className={styles['toolbar-container']}>
         {hasNavigation && (
-          <nav className={clsx(styles['universal-toolbar-nav'], testutilStyles['drawer-closed'])}>
+          <nav className={clsx(styles['universal-toolbar-nav'])}>
             <TriggerButton
               ariaLabel={ariaLabels?.navigationToggle ?? undefined}
               ariaExpanded={false}
@@ -163,6 +187,7 @@ export function AppLayoutToolbarImplementation({
               onClick={() => onNavigationToggle?.(!navigationOpen)}
               ref={navigationFocusRef}
               selected={navigationOpen}
+              disabled={anyPanelOpenInMobile}
             />
           </nav>
         )}
@@ -170,23 +195,32 @@ export function AppLayoutToolbarImplementation({
           <div className={clsx(styles['universal-toolbar-breadcrumbs'], testutilStyles.breadcrumbs)}>
             {breadcrumbs}
             {discoveredBreadcrumbs && (
-              <BreadcrumbGroupImplementation {...discoveredBreadcrumbs} __injectAnalyticsComponentMetadata={true} />
+              <BreadcrumbGroupImplementation
+                {...discoveredBreadcrumbs}
+                data-awsui-discovered-breadcrumbs={true}
+                __injectAnalyticsComponentMetadata={true}
+              />
             )}
           </div>
         )}
         {((drawers && drawers.length > 0) || (hasSplitPanel && splitPanelToggleProps?.displayed)) && (
-          <span className={clsx(styles['universal-toolbar-drawers'])}>
+          <div className={clsx(styles['universal-toolbar-drawers'])}>
             <DrawerTriggers
               ariaLabels={ariaLabels}
               activeDrawerId={activeDrawerId ?? null}
-              drawers={drawers ?? []}
+              drawers={drawers?.filter(item => !!item.trigger) ?? []}
               drawersFocusRef={drawersFocusRef}
               onActiveDrawerChange={onActiveDrawerChange}
               splitPanelToggleProps={splitPanelToggleProps?.displayed ? splitPanelToggleProps : undefined}
               splitPanelFocusRef={splitPanelFocusRef}
               onSplitPanelToggle={onSplitPanelToggle}
+              disabled={anyPanelOpenInMobile}
+              globalDrawersFocusControl={globalDrawersFocusControl}
+              globalDrawers={globalDrawers?.filter(item => !!item.trigger) ?? []}
+              activeGlobalDrawersIds={activeGlobalDrawersIds ?? []}
+              onActiveGlobalDrawersChange={onActiveGlobalDrawersChange}
             />
-          </span>
+          </div>
         )}
       </div>
     </ToolbarSlot>

@@ -51,7 +51,17 @@
   }
 }
 
-.header {
+.hidden {
+  display: none;
+}
+// visibly hidden, but focusable
+.initial-hidden {
+  overflow: hidden;
+  block-size: 0;
+}
+
+.header,
+.header-replacement {
   font-weight: styles.$font-weight-bold;
 }
 
@@ -111,7 +121,8 @@
   }
 }
 
-.content {
+.content,
+.content-replacement {
   /* used in test-utils */
 }
 
