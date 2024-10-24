@@ -15,4 +15,4 @@ jobs:
       - name: Remove preview label
         run: gh pr edit ${{ github.event.number }} --remove-label "allow previews"
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.PREVIEW_DEPLOY_TOKEN }}
