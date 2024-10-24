@@ -7,11 +7,12 @@ on:
 # permissions:
   # id-token: write
 
-
 jobs:
-  check-branch:
+  remove-preview-label:
     if: ${{ toJSON(github.event.workflow_run.pull_requests) != '[]' }}
     runs-on: ubuntu-latest
     steps:
       - name: Remove preview label
         run: gh pr edit ${{ github.event.number }} --remove-label "allow previews"
+        env:
+          GH_TOKEN: ${{ github.token }}
