@@ -1,0 +1,17 @@
+name: Remove previews from closed PR
+
+on:
+  pull_request:
+    types: [closed]
+
+# permissions:
+  # id-token: write
+
+
+jobs:
+  check-branch:
+    if: ${{ toJSON(github.event.workflow_run.pull_requests) != '[]' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Remove preview label
+        run: gh pr edit ${{ github.event.number }} --remove-label "allow previews"
