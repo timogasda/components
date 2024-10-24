@@ -4,8 +4,8 @@ on:
   pull_request:
     types: [closed]
 
-# permissions:
-  # id-token: write
+permissions:
+  id-token: write
 
 jobs:
   remove-preview-label:
@@ -13,6 +13,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Remove preview label
-        run: gh pr edit ${{ github.event.number }} --remove-label "allow previews"
         env:
           GH_TOKEN: ${{ secrets.PREVIEW_DEPLOY_TOKEN }}
+        run: gh pr edit ${{ github.event.number }} --remove-label "allow previews"
